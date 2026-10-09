@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Luna Studio</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#100d1d;color:#fff;font-family:Arial,sans-serif}
+header{text-align:center;padding:28px 15px;background:linear-gradient(135deg,#30205b,#a32e72)}
+h1{margin:0;font-size:32px}
+header p{margin-bottom:0}
+main{max-width:650px;margin:auto;padding:18px}
+.panel{background:#211a34;border:1px solid #493764;border-radius:16px;padding:18px;margin-bottom:16px}
+h2{font-size:20px;margin-top:0}
+label{display:block;margin:14px 0 7px}
+input,textarea,select{width:100%;padding:12px;border-radius:9px;border:1px solid #62517b;background:#130f20;color:white;font-size:16px}
+textarea{min-height:100px;resize:vertical}
+button{width:100%;padding:14px;border:0;border-radius:10px;background:#d64d9c;color:white;font-size:16px;font-weight:bold;margin-top:14px}
+.note{color:#d0c5e5;font-size:14px;line-height:1.5}
+#status{white-space:pre-wrap;line-height:1.5}
+</style>
+</head>
+<body>
+<header>
+<h1>🌙 Luna Studio</h1>
+<p>Tvoje hudba. Tvoj príbeh. Tvoj videoklip.</p>
+</header>
+<main>
+<section class="panel">
+<h2>🎬 Vytvor svoj videoklip</h2>
+<label for="song">Názov pesničky</label>
+<input id="song" placeholder="Napr. Srdce v plameňoch">
+<label for="style">Štýl videoklipu</label>
+<select id="style">
+<option>Filmový a emotívny</option>
+<option>Romantický</option>
+<option>Temný a dramatický</option>
+<option>Koncertný</option>
+<option>Fantasy a magický</option>
+<option>Mestský pop-rap</option>
+</select>
+<label for="idea">Ako má klip vyzerať?</label>
+<textarea id="idea" placeholder="Opíš príbeh, postavy, prostredie a náladu..."></textarea>
+<label for="music">Tvoja pesnička (zariadenie)</label>
+<input id="music" type="file" accept="audio/*">
+<button onclick="prepare()">✨ Pripraviť videoklip</button>
+<p class="note">Luna ti pripraví zadanie pre tvorbu klipu. Samotné generovanie videa zatiaľ vyžaduje externú službu.</p>
+<div id="status"></div>
+</section>
+<section class="panel">
+<h2>💜 Čo bude nasledovať?</h2>
+<p>🎵 Práca s vlastnou pesničkou</p>
+<p>🎭 Príbeh s AI postavami</p>
+<p>🎞️ Scény a pohyblivé zábery</p>
+<p>📱 Ovládanie priamo z mobilu</p>
+<p class="note">Cieľom je používať bezplatné možnosti a vyhnúť sa plateným kreditom. Úplne bezplatné generovanie celého 3–4 minútového klipu však nemusí byť dostupné.</p>
+</section>
+</main>
+<script>
+function prepare(){
+const song=document.getElementById('song').value.trim()||'Moja pesnička';
+const style=document.getElementById('style').value;
+const idea=document.getElementById('idea').value.trim()||'Vytvor filmový videoklip, ktorý vystihuje emócie pesničky.';
+const prompt='Create a music video for the song "'+song+'". Style: '+style+'. Story and visuals: '+idea+'. Cinematic shots, consistent characters, emotional storytelling, realistic motion, 16:9 widescreen.';
+document.getElementById('status').textContent='🌙 Zadanie je pripravené!\n\n'+prompt+'\n\nSkopíruj zadanie a použi ho v dostupnom AI video nástroji. Táto stránka zatiaľ video sama negeneruje.';
+if(navigator.clipboard){navigator.clipboard.writeText(prompt).then(()=>{document.getElementById('status').textContent+='\\n\\n✅ Zadanie sa skopírovalo do schránky.'}).catch(()=>{})}
+}
+</script>
+</body>
+</html>
