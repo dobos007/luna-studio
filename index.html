@@ -220,6 +220,9 @@ function draw(index){
     ctx.fillRect(0,h-180,w,180);
     ctx.textAlign = "center";
     ctx.fillStyle = "#fff";
+    ctx.shadowColor = "rgba(0,0,0,0.8)";
+ctx.shadowBlur = 12;
+ctx.shadowOffsetY = 3;
     ctx.font = "bold 48px Arial";
     wrapText(title,w/2,h-105,w-100,58);
   }
@@ -230,6 +233,8 @@ function draw(index){
     ctx.fillStyle = "#f7d9ec";
     ctx.font = "28px Arial";
     wrapText(caption,w/2,h-35,w-100,34);
+    ctx.shadowBlur = 0;
+ctx.shadowOffsetY = 0;
   }
 }
 
