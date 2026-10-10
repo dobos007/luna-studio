@@ -230,9 +230,16 @@ ctx.shadowOffsetY = 3;
   const caption = document.getElementById("caption").value.trim();
   if(caption){
     ctx.textAlign = "center";
-    ctx.fillStyle = "#f7d9ec";
-    ctx.font = "28px Arial";
-    wrapText(caption,w/2,h-35,w-100,34);
+    
+ctx.shadowColor = "rgba(0,0,0,0.8)";
+ctx.shadowBlur = 8;
+ctx.shadowOffsetY = 2;
+ctx.fillStyle = "#ffffff";
+ctx.font = "bold 28px Arial";
+wrapText(caption,w/2,h-35,w-100,34);
+ctx.shadowBlur = 0;
+ctx.shadowOffsetY = 0;
+    ;
     ctx.shadowBlur = 0;
 ctx.shadowOffsetY = 0;
   }
