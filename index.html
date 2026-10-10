@@ -138,65 +138,74 @@ $("music").addEventListener("change", () => {
 });
 
 
+
+function draw(index){
+
+  
 function draw(index){
   const w = canvas.width, h = canvas.height;
-  const scene = scenes[index];
+  const audio = document.getElementById("audio");
+  const total = audio.duration;
+  const sceneDuration = total > 0 && scenes.length
+    ? total / scenes.length : 5;
 
-  let media = null;
-  if(scene){
+  const progress = total > 0
+    ? (audio.currentTime % sceneDuration) / sceneDuration
+    : (Date.now() % 5000) / 5000;
+
+  function drawScene(scene, zoom, movement, alpha){
+    if(!scene) return;
+
+    let media = null;
     if(scene.image && scene.image.complete &&
        scene.image.naturalWidth > 0) media = scene.image;
-    if(scene.video && scene.video.readyState >= 2) media = scene.video;
+    if(scene.video && scene.video.readyState >= 2)
+      media = scene.video;
+
+    if(!media) return;
+
+    const mw = media.videoWidth || media.naturalWidth;
+    const mh = media.videoHeight || media.naturalHeight;
+    if(!mw || !mh) return;
+
+    const scale = Math.max(w/mw,h/mh) * zoom;
+    const dw = mw * scale;
+    const dh = mh * scale;
+
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.beginPath();
+    ctx.rect(0,0,w,h);
+    ctx.clip();
+    ctx.drawImage(
+      media,
+      (w-dw)/2 + movement,
+      (h-dh)/2,
+      dw,
+      dh
+    );
+    ctx.restore();
   }
 
   ctx.fillStyle = "#100d1d";
   ctx.fillRect(0,0,w,h);
 
-  if(media){
-    const mw = media.videoWidth || media.naturalWidth;
-    const mh = media.videoHeight || media.naturalHeight;
+  const scene = scenes[index];
+  const nextScene = scenes[index + 1];
 
-    if(mw && mh){
-      const audio = document.getElementById("audio");
-      const total = audio.duration;
-      const sceneDuration = total > 0 && scenes.length
-        ? total / scenes.length : 5;
-      const progress = total > 0
-        ? (audio.currentTime % sceneDuration) / sceneDuration
-        : (Date.now() % 5000) / 5000;
+  const zoom = 1.02 + progress * 0.30;
+  const movement = Math.sin(progress * Math.PI * 2) * 65;
 
-      // Pomalý filmový zoom a pohyb kamery
-      const zoom = 1.02 + progress * 0.30;
-      const scale = Math.max(w/mw,h/mh) * zoom;
-      const dw = mw * scale;
-      const dh = mh * scale;
-      const movement = Math.sin(progress * Math.PI * 2) * 65;
+  drawScene(scene, zoom, movement, 1);
 
-      ctx.save();
-      ctx.beginPath();
-      ctx.rect(0,0,w,h);
-      ctx.clip();
-      ctx.drawImage(
-        media,
-        (w-dw)/2 + movement,
-        (h-dh)/2,
-        dw,
-        dh
-      );
-      ctx.restore();
+  // Jemne prelínanie do ďalšej scény
+  const fadeStart = 0.80;
+  if(nextScene && progress > fadeStart){
+    const blend = (progress - fadeStart) / (1 - fadeStart);
+    drawScene(nextScene, zoom, movement, blend);
+  }
 
-      // Jemné stmavenie na začiatku a konci scény
-      const fade = 0.12;
-      let darkness = 0;
-      if(progress < fade) darkness = 1-progress/fade;
-      else if(progress > 1-fade) darkness = (progress-(1-fade))/fade;
-
-      if(darkness > 0){
-        ctx.fillStyle = "rgba(0,0,0," + (darkness*0.65) + ")";
-        ctx.fillRect(0,0,w,h);
-      }
-    }
-  }else{
+  if(!scene || (!scene.image && !scene.video)){
     const g = ctx.createLinearGradient(0,0,w,h);
     g.addColorStop(0,"#30205b");
     g.addColorStop(1,"#a32e72");
@@ -228,7 +237,6 @@ function draw(index){
     wrapText(caption,w/2,h-35,w-100,34);
   }
 }
-
 
 function wrapText(text,x,y,maxWidth,lineHeight){
   const words = text.split(/\s+/);
