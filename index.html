@@ -166,11 +166,11 @@ function draw(index){
         : (Date.now() % 5000) / 5000;
 
       // Pomalý filmový zoom a pohyb kamery
-      const zoom = 1.02 + progress * 0.13;
+      const zoom = 1.02 + progress * 0.30;
       const scale = Math.max(w/mw,h/mh) * zoom;
       const dw = mw * scale;
       const dh = mh * scale;
-      const movement = Math.sin(progress * Math.PI) * 24;
+      const movement = Math.sin(progress * Math.PI * 2) * 65;
 
       ctx.save();
       ctx.beginPath();
