@@ -7,31 +7,46 @@
 <style>
 *{box-sizing:border-box}
 body{margin:0;background:#100d1d;color:#fff;font-family:Arial,sans-serif}
-header{text-align:center;padding:28px 15px;background:linear-gradient(135deg,#30205b,#a32e72)}
+header{text-align:center;padding:26px 15px;background:linear-gradient(135deg,#30205b,#a32e72)}
 h1{margin:0;font-size:32px}
 header p{margin-bottom:0}
-main{max-width:650px;margin:auto;padding:18px}
+main{max-width:720px;margin:auto;padding:16px}
 .panel{background:#211a34;border:1px solid #493764;border-radius:16px;padding:18px;margin-bottom:16px}
 h2{font-size:20px;margin-top:0}
 label{display:block;margin:14px 0 7px}
 input,textarea,select{width:100%;padding:12px;border-radius:9px;border:1px solid #62517b;background:#130f20;color:white;font-size:16px}
-textarea{min-height:100px;resize:vertical}
+textarea{min-height:85px;resize:vertical}
 button{width:100%;padding:14px;border:0;border-radius:10px;background:#d64d9c;color:white;font-size:16px;font-weight:bold;margin-top:14px}
+button:disabled{opacity:.5}
 .note{color:#d0c5e5;font-size:14px;line-height:1.5}
-#status{white-space:pre-wrap;line-height:1.5}
+canvas{display:block;width:100%;height:auto;background:#080711;border-radius:10px;margin-top:12px}
+#status{white-space:pre-wrap;line-height:1.5;margin-top:12px;overflow-wrap:anywhere}
+#download{display:none;color:#fff;background:#573a83;padding:14px;border-radius:10px;text-align:center;margin-top:12px}
+#files{font-size:14px;line-height:1.7;color:#d0c5e5}
 </style>
 </head>
 <body>
 <header>
 <h1>🌙 Luna Studio</h1>
-<p>Tvoje hudba. Tvoj príbeh. Tvoj videoklip.</p>
+<p>Tvoja hudba. Tvoj príbeh. Tvoj videoklip.</p>
 </header>
+
 <main>
 <section class="panel">
 <h2>🎬 Vytvor svoj videoklip</h2>
+
 <label for="song">Názov pesničky</label>
 <input id="song" placeholder="Napr. Srdce v plameňoch">
-<label for="style">Štýl videoklipu</label>
+
+<label for="music">🎵 Tvoja pesnička</label>
+<input id="music" type="file" accept="audio/*">
+
+<label for="scenes">🎞️ Obrázky alebo videá do klipu</label>
+<input id="scenes" type="file" accept="image/*,video/*" multiple>
+<p class="note">Vyber viac obrázkov alebo krátkych videí. Poradie scén bude podľa poradia vybraných súborov.</p>
+<div id="files"></div>
+
+<label for="style">Štýl klipu</label>
 <select id="style">
 <option>Filmový a emotívny</option>
 <option>Romantický</option>
@@ -40,32 +55,309 @@ button{width:100%;padding:14px;border:0;border-radius:10px;background:#d64d9c;co
 <option>Fantasy a magický</option>
 <option>Mestský pop-rap</option>
 </select>
-<label for="idea">Ako má klip vyzerať?</label>
-<textarea id="idea" placeholder="Opíš príbeh, postavy, prostredie a náladu..."></textarea>
-<label for="music">Tvoja pesnička (zariadenie)</label>
-<input id="music" type="file" accept="audio/*">
-<button onclick="prepare()">✨ Pripraviť videoklip</button>
-<p class="note">Luna ti pripraví zadanie pre tvorbu klipu. Samotné generovanie videa zatiaľ vyžaduje externú službu.</p>
-<div id="status"></div>
+
+<label for="title">Text zobrazený vo videu</label>
+<input id="title" placeholder="Názov pesničky alebo venovanie">
+
+<label for="caption">Doplňujúci text</label>
+<textarea id="caption" placeholder="Napr. Niektoré spomienky nikdy nezhasnú..."></textarea>
+
+<button id="previewBtn" onclick="preview()">👁️ Ukáž náhľad</button>
+<canvas id="canvas" width="1280" height="720"></canvas>
+
+<button id="makeBtn" onclick="makeVideo()">✨ Vytvoriť a stiahnuť videoklip</button>
+<div id="status" class="note">Vyber pesničku a aspoň jeden obrázok alebo video.</div>
+<a id="download" download="luna-studio-klip.webm">⬇️ Stiahnuť hotový videoklip</a>
 </section>
+
 <section class="panel">
-<h2>💜 Čo bude nasledovať?</h2>
-<p>🎵 Práca s vlastnou pesničkou</p>
-<p>🎭 Príbeh s AI postavami</p>
-<p>🎞️ Scény a pohyblivé zábery</p>
-<p>📱 Ovládanie priamo z mobilu</p>
-<p class="note">Cieľom je používať bezplatné možnosti a vyhnúť sa plateným kreditom. Úplne bezplatné generovanie celého 3–4 minútového klipu však nemusí byť dostupné.</p>
+<h2>💜 Ako to funguje?</h2>
+<p>🎵 Tvoja pesnička bude zvukovou stopou.</p>
+<p>🎞️ Obrázky a videá sa rozdelia na scény.</p>
+<p>✨ Luna pridá názov a filmový vzhľad.</p>
+<p>📥 Hotový klip si stiahneš do zariadenia.</p>
+<p class="note">Video sa zostavuje priamo v podporovanom prehliadači. Dlhé pesničky a veľké súbory môžu zaťažiť mobil. Zábery z AI nástrojov môžeš pridať ako vlastné videá.</p>
 </section>
 </main>
+
+<audio id="audio" preload="metadata"></audio>
+
 <script>
-function prepare(){
-const song=document.getElementById('song').value.trim()||'Moja pesnička';
-const style=document.getElementById('style').value;
-const idea=document.getElementById('idea').value.trim()||'Vytvor filmový videoklip, ktorý vystihuje emócie pesničky.';
-const prompt='Create a music video for the song "'+song+'". Style: '+style+'. Story and visuals: '+idea+'. Cinematic shots, consistent characters, emotional storytelling, realistic motion, 16:9 widescreen.';
-document.getElementById('status').textContent='🌙 Zadanie je pripravené!\n\n'+prompt+'\n\nSkopíruj zadanie a použi ho v dostupnom AI video nástroji. Táto stránka zatiaľ video sama negeneruje.';
-if(navigator.clipboard){navigator.clipboard.writeText(prompt).then(()=>{document.getElementById('status').textContent+='\\n\\n✅ Zadanie sa skopírovalo do schránky.'}).catch(()=>{})}
+const $ = id => document.getElementById(id);
+const canvas = $("canvas");
+const ctx = canvas.getContext("2d");
+let scenes = [];
+let audioUrl = "";
+let busy = false;
+let previewIndex = 0;
+
+function setStatus(text){
+  $("status").textContent = text;
 }
+
+function loadScenes(){
+  scenes.forEach(s => {
+    if(s.url) URL.revokeObjectURL(s.url);
+  });
+  scenes = Array.from($("scenes").files || []).map(file => {
+    const item = {
+      file,
+      url: URL.createObjectURL(file),
+      image: null,
+      video: null
+    };
+    if(file.type.startsWith("image/")){
+      item.image = new Image();
+      item.image.src = item.url;
+    }else if(file.type.startsWith("video/")){
+      item.video = document.createElement("video");
+      item.video.src = item.url;
+      item.video.muted = true;
+      item.video.loop = true;
+      item.video.playsInline = true;
+      item.video.preload = "auto";
+    }
+    return item;
+  });
+  $("files").textContent = scenes.length
+    ? "Vybrané scény:\n" + scenes.map((s,i) => (i+1)+". "+s.file.name).join("\n")
+    : "Zatiaľ nie sú vybrané žiadne scény.";
+  draw(0);
+}
+
+$("scenes").addEventListener("change", loadScenes);
+
+$("music").addEventListener("change", () => {
+  if(audioUrl) URL.revokeObjectURL(audioUrl);
+  const file = $("music").files[0];
+  if(file){
+    audioUrl = URL.createObjectURL(file);
+    $("audio").src = audioUrl;
+    setStatus("Pesnička je načítaná. Teraz vyber obrázky alebo videá.");
+  }
+});
+
+function draw(index){
+  const w = canvas.width, h = canvas.height;
+  ctx.fillStyle = "#100d1d";
+  ctx.fillRect(0,0,w,h);
+
+  const scene = scenes[index];
+  let media = null;
+  if(scene){
+    if(scene.image && scene.image.complete &&
+       scene.image.naturalWidth > 0) media = scene.image;
+    if(scene.video && scene.video.readyState >= 2) media = scene.video;
+  }
+
+  if(media){
+    const mw = media.videoWidth || media.naturalWidth;
+    const mh = media.videoHeight || media.naturalHeight;
+    if(mw && mh){
+      const scale = Math.max(w/mw,h/mh);
+      const dw = mw*scale, dh = mh*scale;
+      ctx.drawImage(media,(w-dw)/2,(h-dh)/2,dw,dh);
+    }
+  }else{
+    const g = ctx.createLinearGradient(0,0,w,h);
+    g.addColorStop(0,"#30205b");
+    g.addColorStop(1,"#a32e72");
+    ctx.fillStyle = g;
+    ctx.fillRect(0,0,w,h);
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "64px Arial";
+    ctx.textAlign = "center";
+    ctx.fillText("🌙 LUNA STUDIO",w/2,h/2);
+  }
+
+  const title = $("title").value.trim() || $("song").value.trim();
+  if(title){
+    ctx.fillStyle = "rgba(0,0,0,.48)";
+    ctx.fillRect(0,h-180,w,180);
+    ctx.textAlign = "center";
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "bold 48px Arial";
+    wrapText(title,w/2,h-105,w-100,58);
+  }
+
+  const caption = $("caption").value.trim();
+  if(caption){
+    ctx.textAlign = "center";
+    ctx.fillStyle = "#f7d9ec";
+    ctx.font = "28px Arial";
+    wrapText(caption,w/2,h-35,w-100,34);
+  }
+}
+
+function wrapText(text,x,y,maxWidth,lineHeight){
+  const words = text.split(/\s+/);
+  let line = "";
+  const lines = [];
+  for(const word of words){
+    const test = line ? line+" "+word : word;
+    if(ctx.measureText(test).width > maxWidth && line){
+      lines.push(line);
+      line = word;
+    }else line = test;
+  }
+  if(line) lines.push(line);
+  const startY = y - (lines.length-1)*lineHeight/2;
+  lines.forEach((line,i)=>ctx.fillText(line,x,startY+i*lineHeight));
+}
+
+function preview(){
+  if(!scenes.length){
+    setStatus("Najprv vyber aspoň jeden obrázok alebo video.");
+    return;
+  }
+  draw(previewIndex % scenes.length);
+  previewIndex++;
+  const scene = scenes[(previewIndex-1)%scenes.length];
+  if(scene && scene.video){
+    scene.video.play().catch(()=>{});
+  }
+}
+
+async function makeVideo(){
+  if(busy) return;
+  if(!$("music").files[0]){
+    setStatus("Najprv vyber svoju pesničku.");
+    return;
+  }
+  if(!scenes.length){
+    setStatus("Najprv vyber aspoň jeden obrázok alebo video.");
+    return;
+  }
+  if(!window.MediaRecorder || !canvas.captureStream){
+    setStatus("Tento prehliadač nepodporuje tvorbu videa. Skús aktuálny Chrome.");
+    return;
+  }
+
+  const audio = $("audio");
+  busy = true;
+  $("makeBtn").disabled = true;
+  $("download").style.display = "none";
+  setStatus("Pripravujem scény a zvuk...");
+
+  try{
+    await new Promise((resolve,reject)=>{
+      if(audio.readyState >= 1 && Number.isFinite(audio.duration) && audio.duration>0) resolve();
+      else{
+        audio.onloadedmetadata = resolve;
+        audio.onerror = ()=>reject(new Error("Pesničku sa nepodarilo načítať."));
+      }
+    });
+
+    const duration = audio.duration;
+    if(!Number.isFinite(duration) || duration <= 0){
+      throw new Error("Nepodarilo sa zistiť dĺžku pesničky.");
+    }
+
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if(!AC) throw new Error("Tento prehliadač nepodporuje spracovanie zvuku.");
+
+    const ac = new AC();
+    const source = ac.createMediaElementSource(audio);
+    const audioOut = ac.createMediaStreamDestination();
+    source.connect(audioOut);
+    source.connect(ac.destination);
+
+    const videoStream = canvas.captureStream(30);
+    const stream = new MediaStream([
+      ...videoStream.getVideoTracks(),
+      ...audioOut.stream.getAudioTracks()
+    ]);
+
+    let mime = "";
+    for(const type of [
+      "video/webm;codecs=vp9,opus",
+      "video/webm;codecs=vp8,opus",
+      "video/webm"
+    ]){
+      if(MediaRecorder.isTypeSupported(type)){
+        mime = type;
+        break;
+      }
+    }
+    if(!mime) throw new Error("Prehliadač nepodporuje vhodný formát videa.");
+
+    const recorder = new MediaRecorder(stream,{mimeType:mime});
+    const chunks = [];
+    recorder.ondataavailable = e => {
+      if(e.data && e.data.size) chunks.push(e.data);
+    };
+
+    const finished = new Promise(resolve=>{
+      recorder.onstop = ()=>resolve();
+    });
+
+    let lastScene = -1;
+    let raf = 0;
+    let stopped = false;
+    const sceneDuration = duration / scenes.length;
+
+    function renderFrame(){
+      if(stopped) return;
+      const t = audio.currentTime;
+      const index = Math.min(scenes.length-1,Math.floor(t/sceneDuration));
+
+      if(index !== lastScene){
+        if(lastScene >= 0 && scenes[lastScene].video){
+          scenes[lastScene].video.pause();
+        }
+        lastScene = index;
+        const v = scenes[index].video;
+        if(v){
+          try{v.currentTime=0;}catch(e){}
+          v.play().catch(()=>{});
+        }
+      }
+
+      draw(index);
+      if(t >= duration || audio.ended){
+        stopped = true;
+        cancelAnimationFrame(raf);
+        if(recorder.state !== "inactive") recorder.stop();
+        return;
+      }
+      raf = requestAnimationFrame(renderFrame);
+    }
+
+    audio.currentTime = 0;
+    await ac.resume();
+    draw(0);
+    recorder.start(1000);
+    await audio.play();
+    renderFrame();
+    setStatus("🎬 Nahrávam videoklip... nechaj túto stránku otvorenú, kým sa pesnička nedohrá.");
+
+    await finished;
+    audio.pause();
+    scenes.forEach(s=>{if(s.video)s.video.pause();});
+    stream.getTracks().forEach(t=>t.stop());
+    source.disconnect();
+    await ac.close();
+
+    const blob = new Blob(chunks,{type:mime});
+    if(!blob.size) throw new Error("Video sa nevytvorilo. Skús to ešte raz.");
+
+    const old = $("download").dataset.url;
+    if(old) URL.revokeObjectURL(old);
+    const url = URL.createObjectURL(blob);
+    $("download").href = url;
+    $("download").dataset.url = url;
+    $("download").style.display = "block";
+    $("download").textContent = "⬇️ Stiahnuť videoklip ("+(blob.size/1024/1024).toFixed(1)+" MB)";
+    setStatus("✅ Hotovo! Klikni na tlačidlo nižšie a stiahni si videoklip.");
+  }catch(err){
+    setStatus("Nepodarilo sa vytvoriť video: "+err.message+"\nSkús menšiu pesničku alebo menej scén.");
+  }finally{
+    busy = false;
+    $("makeBtn").disabled = false;
+  }
+}
+
+draw(0);
 </script>
 </body>
 </html>
