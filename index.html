@@ -137,12 +137,11 @@ $("music").addEventListener("change", () => {
   }
 });
 
+
 function draw(index){
   const w = canvas.width, h = canvas.height;
-  ctx.fillStyle = "#100d1d";
-  ctx.fillRect(0,0,w,h);
-
   const scene = scenes[index];
+
   let media = null;
   if(scene){
     if(scene.image && scene.image.complete &&
@@ -150,13 +149,52 @@ function draw(index){
     if(scene.video && scene.video.readyState >= 2) media = scene.video;
   }
 
+  ctx.fillStyle = "#100d1d";
+  ctx.fillRect(0,0,w,h);
+
   if(media){
     const mw = media.videoWidth || media.naturalWidth;
     const mh = media.videoHeight || media.naturalHeight;
+
     if(mw && mh){
-      const scale = Math.max(w/mw,h/mh);
-      const dw = mw*scale, dh = mh*scale;
-      ctx.drawImage(media,(w-dw)/2,(h-dh)/2,dw,dh);
+      const audio = document.getElementById("audio");
+      const total = audio.duration;
+      const sceneDuration = total > 0 && scenes.length
+        ? total / scenes.length : 5;
+      const progress = total > 0
+        ? (audio.currentTime % sceneDuration) / sceneDuration
+        : (Date.now() % 5000) / 5000;
+
+      // Pomalý filmový zoom a pohyb kamery
+      const zoom = 1.02 + progress * 0.13;
+      const scale = Math.max(w/mw,h/mh) * zoom;
+      const dw = mw * scale;
+      const dh = mh * scale;
+      const movement = Math.sin(progress * Math.PI) * 24;
+
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(0,0,w,h);
+      ctx.clip();
+      ctx.drawImage(
+        media,
+        (w-dw)/2 + movement,
+        (h-dh)/2,
+        dw,
+        dh
+      );
+      ctx.restore();
+
+      // Jemné stmavenie na začiatku a konci scény
+      const fade = 0.12;
+      let darkness = 0;
+      if(progress < fade) darkness = 1-progress/fade;
+      else if(progress > 1-fade) darkness = (progress-(1-fade))/fade;
+
+      if(darkness > 0){
+        ctx.fillStyle = "rgba(0,0,0," + (darkness*0.65) + ")";
+        ctx.fillRect(0,0,w,h);
+      }
     }
   }else{
     const g = ctx.createLinearGradient(0,0,w,h);
@@ -164,23 +202,25 @@ function draw(index){
     g.addColorStop(1,"#a32e72");
     ctx.fillStyle = g;
     ctx.fillRect(0,0,w,h);
-    ctx.fillStyle = "#ffffff";
+    ctx.fillStyle = "#fff";
     ctx.font = "64px Arial";
     ctx.textAlign = "center";
     ctx.fillText("🌙 LUNA STUDIO",w/2,h/2);
   }
 
-  const title = $("title").value.trim() || $("song").value.trim();
+  const title = document.getElementById("title").value.trim()
+    || document.getElementById("song").value.trim();
+
   if(title){
     ctx.fillStyle = "rgba(0,0,0,.48)";
     ctx.fillRect(0,h-180,w,180);
     ctx.textAlign = "center";
-    ctx.fillStyle = "#ffffff";
+    ctx.fillStyle = "#fff";
     ctx.font = "bold 48px Arial";
     wrapText(title,w/2,h-105,w-100,58);
   }
 
-  const caption = $("caption").value.trim();
+  const caption = document.getElementById("caption").value.trim();
   if(caption){
     ctx.textAlign = "center";
     ctx.fillStyle = "#f7d9ec";
@@ -188,6 +228,7 @@ function draw(index){
     wrapText(caption,w/2,h-35,w-100,34);
   }
 }
+
 
 function wrapText(text,x,y,maxWidth,lineHeight){
   const words = text.split(/\s+/);
