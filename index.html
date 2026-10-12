@@ -93,6 +93,23 @@ canvas{display:block;width:100%;height:auto;background:#080711;border-radius:10p
 const $ = id => document.getElementById(id);
 const canvas = $("canvas");
 const ctx = canvas.getContext("2d");
+  
+function setVideoFormat(){
+  const format = $("videoFormat").value;
+
+  if(format === "9:16"){
+    canvas.width = 720;
+    canvas.height = 1280;
+  }else{
+    canvas.width = 1280;
+    canvas.height = 720;
+  }
+
+  draw(previewIndex);
+}
+
+$("videoFormat").addEventListener("change", setVideoFormat);
+  
 let scenes = [];
 let audioUrl = "";
 let busy = false;
