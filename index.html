@@ -63,6 +63,13 @@ canvas{display:block;width:100%;height:auto;background:#080711;border-radius:10p
 <textarea id="caption" placeholder="Napr. Niektoré spomienky nikdy nezhasnú..."></textarea>
 
 <button id="previewBtn" onclick="preview()">👁️ Ukáž náhľad</button>
+  <div>
+  <label for="videoFormat">Formát videa:</label>
+  <select id="videoFormat">
+    <option value="16:9">🖥️ Klasické 16:9</option>
+    <option value="9:16">📱 TikTok / Reels 9:16</option>
+  </select>
+  </div>
 <canvas id="canvas" width="1280" height="720"></canvas>
 
 <button id="makeBtn" onclick="makeVideo()">✨ Vytvoriť a stiahnuť videoklip</button>
